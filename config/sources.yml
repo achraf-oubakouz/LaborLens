@@ -1,0 +1,13 @@
+sources:
+  rekrute:
+    name: Rekrute
+    base_url: https://www.rekrute.com
+    enabled: true
+  emploi_ma:
+    name: Emploi.ma
+    base_url: https://www.emploi.ma
+    enabled: true
+  maroc_annonces:
+    name: MarocAnnonces
+    base_url: https://www.marocannonces.com
+    enabled: false
