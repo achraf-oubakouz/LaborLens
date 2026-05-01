@@ -2,6 +2,7 @@ import argparse
 
 from src.pipelines.bronze import write_rekrute_bronze, write_sample_bronze
 from src.pipelines.gold import silver_to_gold
+from src.pipelines.postgres import load_gold_to_postgres
 from src.pipelines.silver import bronze_to_silver
 
 
@@ -11,6 +12,7 @@ def main() -> None:
     parser.add_argument("--source", choices=["sample", "rekrute"], default="sample")
     parser.add_argument("--pages", type=int, default=1, help="Nombre de pages a scraper")
     parser.add_argument("--keyword", default="", help="Mot-cle de recherche optionnel")
+    parser.add_argument("--load-postgres", action="store_true", help="Charge les tables Gold dans PostgreSQL")
     args = parser.parse_args()
 
     source = "sample" if args.sample else args.source
@@ -30,6 +32,12 @@ def main() -> None:
     print("Gold:")
     for path in gold_paths:
         print(f"- {path}")
+
+    if args.load_postgres:
+        tables = load_gold_to_postgres()
+        print("PostgreSQL:")
+        for table in tables:
+            print(f"- {table}")
 
 
 if __name__ == "__main__":

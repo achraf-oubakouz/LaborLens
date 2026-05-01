@@ -81,6 +81,27 @@ Option avec mot-cle :
 python run_pipeline.py --source rekrute --pages 2 --keyword python
 ```
 
+Pour charger les tables Gold dans PostgreSQL :
+
+```bash
+docker compose up -d postgres
+python load_gold_to_postgres.py
+```
+
+Ou en une seule commande apres le pipeline :
+
+```bash
+python run_pipeline.py --source rekrute --pages 1 --keyword python --load-postgres
+```
+
+Par defaut, le chargement utilise :
+
+```text
+postgresql+psycopg2://emploi:emploi@127.0.0.1:5432/emploi_maroc
+```
+
+Vous pouvez utiliser une autre base avec la variable `DATABASE_URL`.
+
 Les sorties sont generees dans :
 
 - `data/bronze/` : offres brutes
@@ -104,7 +125,6 @@ Services par defaut :
 ## Prochaines etapes
 
 1. Ajouter un scraper reel pour Rekrute ou Emploi.ma.
-2. Charger les tables Gold dans PostgreSQL.
-3. Connecter Superset a PostgreSQL.
-4. Ajouter Airflow pour orchestrer le scraping quotidien.
-5. Ajouter Great Expectations pour formaliser la qualite.
+2. Connecter Superset a PostgreSQL.
+3. Ajouter Airflow pour orchestrer le scraping quotidien.
+4. Ajouter Great Expectations pour formaliser la qualite.

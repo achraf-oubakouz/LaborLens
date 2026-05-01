@@ -26,15 +26,21 @@ services:
       - minio_data:/data
 
   superset:
-    image: apache/superset:4.1.1
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
+    image: laborlens-superset:4.1.1
     container_name: emploi_maroc_superset
     environment:
       SUPERSET_SECRET_KEY: change-me-in-production
     ports:
       - "8088:8088"
+    volumes:
+      - superset_home:/app/superset_home
     depends_on:
       - postgres
 
 volumes:
   postgres_data:
   minio_data:
+  superset_home:
