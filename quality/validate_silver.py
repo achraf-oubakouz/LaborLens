@@ -6,7 +6,37 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SILVER_PATH = PROJECT_ROOT / "data" / "silver" / "offres_clean.csv"
-KNOWN_CITIES = {"Casablanca", "Rabat", "Marrakech", "Tanger", "Fes", "Agadir"}
+KNOWN_CITIES = {
+    "Agadir",
+    "Beni Mellal-Khenifra",
+    "Casablanca",
+    "Casablanca-Mohammedia",
+    "Dakhla",
+    "Deroua",
+    "El Jadida",
+    "Errachidia",
+    "Fes",
+    "Guelmim",
+    "International",
+    "Laayoune",
+    "Marrakech",
+    "Marrakech-Safi",
+    "Meknes",
+    "Mohammedia",
+    "Nador",
+    "Nouaceur",
+    "Oujda",
+    "Rabat",
+    "Rabat-Sale-Kenitra",
+    "Safi",
+    "Sale",
+    "Settat",
+    "Tanger",
+    "Tanger-Tetouan-Al Hoceima",
+    "Temara",
+    "Tetouan",
+    "Tout Le Maroc",
+}
 
 
 def main() -> int:

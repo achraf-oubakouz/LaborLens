@@ -10,4 +10,4 @@ sources:
   maroc_annonces:
     name: MarocAnnonces
     base_url: https://www.marocannonces.com
-    enabled: false
+    enabled: true

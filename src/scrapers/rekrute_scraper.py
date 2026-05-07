@@ -55,6 +55,15 @@ def _extract_title_city(heading: str) -> tuple[str, str]:
     return _clean_text(title), _clean_text(city)
 
 
+def _extract_company_from_url(url: str) -> str:
+    match = re.search(r"-recrutement-(.*?)(?:-[a-z]+)?-\d+\.html", url or "")
+    if not match:
+        return ""
+
+    slug = re.sub(r"\b(casablanca|rabat|marrakech|tanger|fes|agadir|sale|kenitra)\b$", "", match.group(1))
+    return re.sub(r"[-_]+", " ", slug).strip().title()
+
+
 def _candidate_blocks(soup: Any) -> list[Any]:
     headings = []
     for tag_name in ("h2", "h3"):
@@ -109,7 +118,7 @@ def _parse_job_block(block: Any) -> dict[str, str] | None:
     return {
         "source": "rekrute",
         "title": title,
-        "company": "",
+        "company": _extract_company_from_url(url),
         "city": city,
         "sector": sector or "Non renseigne",
         "description": _clean_text(description),
@@ -124,6 +133,7 @@ def scrape_rekrute_jobs(max_pages: int = 1, keyword: str = "") -> list[dict[str,
     try:
         import requests
         from bs4 import BeautifulSoup
+        from requests import RequestException
     except ModuleNotFoundError as exc:
         raise SystemExit(
             "Dependances manquantes pour scraper Rekrute. "
@@ -134,13 +144,20 @@ def scrape_rekrute_jobs(max_pages: int = 1, keyword: str = "") -> list[dict[str,
     seen = set()
 
     for page in range(1, max_pages + 1):
-        response = requests.get(
-            LISTING_URL,
-            params={"s": "3", "p": page, "o": 1, "query": keyword},
-            headers=HEADERS,
-            timeout=30,
-        )
-        response.raise_for_status()
+        try:
+            response = requests.get(
+                LISTING_URL,
+                params={"s": "3", "p": page, "o": 1, "query": keyword},
+                headers=HEADERS,
+                timeout=(10, 30),
+            )
+            response.raise_for_status()
+        except RequestException as exc:
+            print(
+                f"WARNING: Rekrute indisponible pour keyword='{keyword or 'all'}', "
+                f"page={page}. Les pages suivantes de ce mot-cle sont ignorees. Detail: {exc}"
+            )
+            break
 
         soup = BeautifulSoup(response.text, "html.parser")
         blocks = _candidate_blocks(soup)

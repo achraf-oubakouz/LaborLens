@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import create_engine, text
 
-from src.common.paths import GOLD_DIR
+from src.common.paths import GOLD_DIR, SILVER_DIR
 
 
 DEFAULT_DATABASE_URL = "postgresql+psycopg2://emploi:emploi@127.0.0.1:5432/emploi_maroc"
@@ -25,19 +25,28 @@ def get_database_url() -> str:
 
 def load_gold_to_postgres(
     gold_dir: str | Path = GOLD_DIR,
+    silver_path: str | Path = SILVER_DIR / "offres_clean.csv",
     database_url: str | None = None,
 ) -> list[str]:
     gold_path = Path(gold_dir)
+    silver_file = Path(silver_path)
     missing_files = [name for name, _ in GOLD_TABLES if not (gold_path / name).exists()]
     if missing_files:
         joined = ", ".join(missing_files)
         raise FileNotFoundError(f"Fichier(s) Gold introuvable(s): {joined}")
+    if not silver_file.exists():
+        raise FileNotFoundError(f"Fichier Silver introuvable: {silver_file}")
 
     engine = create_engine(database_url or get_database_url())
     loaded_tables = []
 
     try:
         with engine.begin() as connection:
+            silver_df = pd.read_csv(silver_file)
+            connection.execute(text("TRUNCATE TABLE offres_clean"))
+            silver_df.to_sql("offres_clean", connection, if_exists="append", index=False)
+            loaded_tables.append("offres_clean")
+
             for file_name, table_name in GOLD_TABLES:
                 df = pd.read_csv(gold_path / file_name)
                 connection.execute(text(f"TRUNCATE TABLE {table_name}"))
