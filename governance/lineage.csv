@@ -1,0 +1,7 @@
+source,batch_or_stream_entry,bronze_object_path,silver_object_path,postgres_target_table,notes
+Rekrute,batch scraper run_pipeline.py --source rekrute,bronze/rekrute/<yyyy-mm-dd>/<run_id>/offers.avro,silver/jobs/date=<yyyy-mm-dd>/part-*.parquet,offres_clean,Gold tables loaded from silver include offres_par_jour/offres_par_ville/offres_par_secteur/offres_par_contrat/top_competences/offer_skills
+MarocAnnonces,batch scraper run_pipeline.py --source maroc_annonces,bronze/maroc_annonces/<yyyy-mm-dd>/<run_id>/offers.avro,silver/jobs/date=<yyyy-mm-dd>/part-*.parquet,offres_clean,Gold tables loaded from silver include dashboard aggregations
+LinkedIn CSV,optional scripts/import_linkedin_to_bronze.py,bronze/linkedin/<yyyy-mm-dd>/<run_id>/offers.avro,silver/jobs/date=<yyyy-mm-dd>/part-*.parquet,offres_clean,CSV/API import is used instead of direct scraping
+Kafka raw_offers,src.streaming.consumer,raw_offers Kafka topic,silver/jobs/date=<yyyy-mm-dd>/hour=<hh>/part-*.parquet,jobs_clean_stream,Invalid messages go to stream_dead_letter_jobs
+Kafka raw_offers skills,src.streaming.consumer,raw_offers Kafka topic,silver/jobs/date=<yyyy-mm-dd>/hour=<hh>/part-*.parquet,job_skills_stream,Skills are exploded from jobs_clean_stream skills
+Great Expectations,quality/ge_runner.py,great_expectations/expectations/*.json,validation summaries,data_quality_results,Airflow data_quality_checks persists one row per expectation

@@ -1,7 +1,9 @@
-import re
+﻿import re
 from datetime import date
 from typing import Any
 from urllib.parse import urljoin
+
+from src.common.locations import extract_city
 
 
 BASE_URL = "https://www.marocannonces.com"
@@ -15,38 +17,6 @@ HEADERS = {
     "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
 }
 
-KNOWN_CITIES = [
-    "Casablanca",
-    "Marrakech",
-    "Rabat",
-    "Tanger",
-    "Agadir",
-    "Mohammedia",
-    "Sale",
-    "Salé",
-    "Fes",
-    "Fès",
-    "Temara",
-    "Kenitra",
-    "Kénitra",
-    "Bouskoura",
-    "Meknes",
-    "Meknès",
-    "Berrechid",
-    "Nador",
-    "Tetouan",
-    "Safi",
-    "Nouaceur",
-    "Oujda",
-    "Khouribga",
-    "Settat",
-    "Deroua",
-    "Laayoune",
-    "El jadida",
-    "Tout le Maroc",
-]
-
-
 def _clean_text(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip()
 
@@ -56,11 +26,7 @@ def _listing_params(page: int) -> dict[str, int] | None:
 
 
 def _extract_city(title: str) -> str:
-    lowered = title.lower()
-    for city in sorted(KNOWN_CITIES, key=len, reverse=True):
-        if re.search(rf"\b{re.escape(city.lower())}\b", lowered):
-            return city
-    return ""
+    return extract_city(title)
 
 
 def _clean_title(title: str, city: str) -> str:
@@ -157,3 +123,4 @@ def scrape_maroc_annonces_jobs(max_pages: int = 1, keyword: str = "") -> list[di
             jobs.append(job)
 
     return jobs
+

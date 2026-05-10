@@ -1,0 +1,5 @@
+component,version,owner,description,code_reference
+silver_transform,silver_transform_v1.1.0,LaborLens,Normalizes required text/city/contract fields and adds version metadata,src/common/versions.py
+skills_extraction,skills_extraction_v1.0.0,LaborLens,Dictionary-based skill matching from config/skills.yml,src/common/versions.py
+gold_aggregation,gold_aggregation_v1.0.0,LaborLens,Creates dashboard-ready daily/city/sector/contract/skills CSV tables,src/common/versions.py
+great_expectations_suites,ge_suites_v1.0.0,LaborLens,Expectation suites for offres_clean and jobs_clean_stream,great_expectations/expectations

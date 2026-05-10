@@ -1,0 +1,15 @@
+{
+  "expectation_suite_name": "jobs_clean_stream",
+  "ge_cloud_id": null,
+  "expectations": [
+    {"expectation_type": "expect_column_values_to_not_be_null", "kwargs": {"column": "title"}, "meta": {"severity": "error"}},
+    {"expectation_type": "expect_column_values_to_match_regex", "kwargs": {"column": "title", "regex": "\\S+"}, "meta": {"severity": "error"}},
+    {"expectation_type": "expect_column_values_to_not_be_null", "kwargs": {"column": "source"}, "meta": {"severity": "error"}},
+    {"expectation_type": "expect_column_values_to_match_regex", "kwargs": {"column": "source", "regex": "\\S+"}, "meta": {"severity": "error"}},
+    {"expectation_type": "expect_column_values_to_not_be_null", "kwargs": {"column": "published_at"}, "meta": {"severity": "warning", "note": "Missing publication dates are flagged, not fatal."}},
+    {"expectation_type": "expect_column_values_to_be_in_set", "kwargs": {"column": "city", "value_set": ["Non renseigne"]}, "meta": {"severity": "warning", "note": "Runtime runner expands this to the full normalized Morocco city set."}},
+    {"expectation_type": "expect_column_values_to_be_between", "kwargs": {"column": "content_length", "min_value": 50}, "meta": {"severity": "warning"}},
+    {"expectation_type": "expect_column_values_to_be_unique", "kwargs": {"column": "url"}, "meta": {"severity": "error", "note": "Applied to non-empty URLs in quality/ge_runner.py."}}
+  ],
+  "meta": {"great_expectations_version": "0.18.22"}
+}

@@ -5,7 +5,10 @@ __pycache__/
 .pytest_cache/
 .env
 data/bronze/**/*.json
+data/bronze/**/*.avro
 data/silver/**/*.csv
+data/silver/**/*.parquet
 data/gold/**/*.csv
+data/lake/**/*.parquet
 !data/**/.gitkeep
 logs/

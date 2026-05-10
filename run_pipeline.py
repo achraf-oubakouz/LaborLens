@@ -1,4 +1,6 @@
 import argparse
+from datetime import datetime, timezone
+from uuid import uuid4
 
 from src.pipelines.bronze import (
     write_emploi_ma_bronze,
@@ -7,11 +9,11 @@ from src.pipelines.bronze import (
     write_sample_bronze,
 )
 from src.pipelines.gold import silver_to_gold
-from src.pipelines.postgres import load_gold_to_postgres
+from src.pipelines.postgres import load_gold_to_postgres, record_pipeline_run
 from src.pipelines.silver import all_bronze_to_silver, bronze_to_silver, sources_bronze_to_silver
 
 
-REAL_SOURCES = ["rekrute", "maroc_annonces"]
+REAL_SOURCES = ["rekrute", "maroc_annonces", "linkedin"]
 
 
 def _split_keywords(value: str) -> list[str]:
@@ -47,35 +49,42 @@ def main() -> None:
     parser.add_argument("--load-postgres", action="store_true", help="Charge les tables Gold dans PostgreSQL")
     args = parser.parse_args()
 
+    run_id = f"batch-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:8]}"
+    started_at = datetime.now(timezone.utc)
     source = "sample" if args.sample else args.source
     bronze_paths = []
     silver_source = None if source == "all" else source
 
-    if args.rebuild_only:
-        silver_path = sources_bronze_to_silver(REAL_SOURCES) if source == "all" else all_bronze_to_silver(source=silver_source)
-    elif source == "sample":
-        bronze_paths.append(write_sample_bronze())
-        silver_path = all_bronze_to_silver(source=source) if args.all_bronze else bronze_to_silver(bronze_paths[0])
-    elif source in {"rekrute", "emploi_ma", "maroc_annonces"}:
-        keywords = _split_keywords(args.keywords) or [args.keyword]
-        bronze_paths = _scrape_keywords(source, keywords, args.pages)
-        if not bronze_paths:
-            raise SystemExit(f"Aucune donnee {source} collectee. Essayez moins de pages ou relancez plus tard.")
-        if args.all_bronze or len(bronze_paths) > 1:
-            silver_path = all_bronze_to_silver(source=source)
+    try:
+        if args.rebuild_only:
+            silver_path = sources_bronze_to_silver(REAL_SOURCES) if source == "all" else all_bronze_to_silver(source=silver_source)
+        elif source == "sample":
+            bronze_paths.append(write_sample_bronze())
+            silver_path = all_bronze_to_silver(source=source) if args.all_bronze else bronze_to_silver(bronze_paths[0])
+        elif source in {"rekrute", "emploi_ma", "maroc_annonces"}:
+            keywords = _split_keywords(args.keywords) or [args.keyword]
+            bronze_paths = _scrape_keywords(source, keywords, args.pages)
+            if not bronze_paths:
+                raise SystemExit(f"Aucune donnee {source} collectee. Essayez moins de pages ou relancez plus tard.")
+            if args.all_bronze or len(bronze_paths) > 1:
+                silver_path = all_bronze_to_silver(source=source)
+            else:
+                silver_path = bronze_to_silver(bronze_paths[0])
+        elif source == "all":
+            keywords = _split_keywords(args.keywords) or [args.keyword]
+            bronze_paths.extend(_scrape_keywords("rekrute", keywords, args.pages))
+            bronze_paths.extend(_scrape_keywords("maroc_annonces", [""], args.pages))
+            if not bronze_paths:
+                raise SystemExit("Aucune donnee collectee. Essayez moins de pages ou relancez plus tard.")
+            silver_path = sources_bronze_to_silver(REAL_SOURCES)
         else:
-            silver_path = bronze_to_silver(bronze_paths[0])
-    elif source == "all":
-        keywords = _split_keywords(args.keywords) or [args.keyword]
-        bronze_paths.extend(_scrape_keywords("rekrute", keywords, args.pages))
-        bronze_paths.extend(_scrape_keywords("maroc_annonces", [""], args.pages))
-        if not bronze_paths:
-            raise SystemExit("Aucune donnee collectee. Essayez moins de pages ou relancez plus tard.")
-        silver_path = sources_bronze_to_silver(REAL_SOURCES)
-    else:
-        raise SystemExit(f"Source non supportee: {source}")
+            raise SystemExit(f"Source non supportee: {source}")
 
-    gold_paths = silver_to_gold(silver_path)
+        gold_paths = silver_to_gold(silver_path)
+    except Exception as exc:
+        if args.load_postgres:
+            record_pipeline_run(run_id, "batch_medallion", started_at, "failed", bronze_paths, error_message=str(exc))
+        raise
 
     if bronze_paths:
         print("Bronze:")
@@ -90,6 +99,7 @@ def main() -> None:
 
     if args.load_postgres:
         tables = load_gold_to_postgres()
+        record_pipeline_run(run_id, "batch_medallion", started_at, "success", bronze_paths, silver_path, gold_paths)
         print("PostgreSQL:")
         for table in tables:
             print(f"- {table}")

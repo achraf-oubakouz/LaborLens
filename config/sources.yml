@@ -11,3 +11,8 @@ sources:
     name: MarocAnnonces
     base_url: https://www.marocannonces.com
     enabled: true
+  linkedin:
+    name: LinkedIn
+    base_url: https://www.linkedin.com/jobs
+    enabled: true
+    mode: csv_import

@@ -1,0 +1,97 @@
+table_name,column_name,data_type,source,description,transformation_rule
+offres_clean,source,string,bronze job offers,Source site or import channel,Trimmed and required by quality suite
+offres_clean,title,string,bronze job offers,Job offer title,Trimmed; blank titles removed
+offres_clean,company,string,bronze job offers,Company name,Inferred from Rekrute URL when missing
+offres_clean,city,string,bronze job offers,Normalized Moroccan city or region,Normalized with src.common.locations.extract_city
+offres_clean,sector,string,bronze job offers,Business sector,Missing values set to Non renseigne and title-cased
+offres_clean,description,string,bronze job offers,Offer body text,Preserved from source
+offres_clean,experience_level,string,bronze job offers,Required experience level,Missing values set to Non renseigne
+offres_clean,contract_type,string,bronze job offers,Contract type,Missing values set to Non renseigne and upper-cased
+offres_clean,published_at,date,bronze job offers,Publication date,Parsed with pandas to_datetime; invalid dates become null and are quality warnings
+offres_clean,url,string,bronze job offers,Source offer URL,Deduplication and uniqueness quality rule when present
+offres_clean,content_length,integer,silver transform,Description length,Computed as length of description
+offres_clean,skills,string,silver transform,Comma-separated detected skills,Dictionary match from config/skills.yml
+offres_clean,silver_transform_version,string,silver transform,Silver transformation version,Constant from src.common.versions
+offres_clean,skills_extraction_version,string,silver transform,Skills extraction version,Constant from src.common.versions
+offres_par_jour,date,date,offres_clean,Offer publication date,Grouped by published_at date
+offres_par_jour,nb_offres,integer,offres_clean,Number of offers,COUNT rows by date
+offres_par_ville,city,string,offres_clean,Normalized city,Grouped by city
+offres_par_ville,nb_offres,integer,offres_clean,Number of offers,COUNT rows by city
+offres_par_secteur,sector,string,offres_clean,Sector,Grouped by sector
+offres_par_secteur,nb_offres,integer,offres_clean,Number of offers,COUNT rows by sector
+offres_par_contrat,contract_type,string,offres_clean,Contract type,Grouped by contract_type
+offres_par_contrat,nb_offres,integer,offres_clean,Number of offers,COUNT rows by contract_type
+top_competences,skill,string,offres_clean,Detected skill,Exploded from comma-separated skills
+top_competences,nb_mentions,integer,offres_clean,Skill mention count,COUNT rows by skill
+offer_skills,source,string,offres_clean,Source site,Carried from offer row
+offer_skills,title,string,offres_clean,Job title,Carried from offer row
+offer_skills,company,string,offres_clean,Company name,Carried from offer row
+offer_skills,city,string,offres_clean,Normalized city,Carried from offer row
+offer_skills,contract_type,string,offres_clean,Contract type,Carried from offer row
+offer_skills,published_at,date,offres_clean,Publication date,Carried from offer row
+offer_skills,url,string,offres_clean,Source URL,Carried from offer row
+offer_skills,skill,string,offres_clean,Detected skill,Exploded from skills list
+jobs_clean_stream,job_id,string,Kafka raw_offers,Deterministic streaming offer id,SHA-256 of URL or natural key
+jobs_clean_stream,source,string,Kafka raw_offers,Source site or import channel,Required by stream validator
+jobs_clean_stream,title,string,Kafka raw_offers,Job title,Required by stream validator
+jobs_clean_stream,company,string,Kafka raw_offers,Company name,Normalized missing values to Non renseigne
+jobs_clean_stream,city,string,Kafka raw_offers,Normalized city,Normalized with src.common.locations.extract_city
+jobs_clean_stream,sector,string,Kafka raw_offers,Business sector,Missing values set to Non renseigne and title-cased
+jobs_clean_stream,description,string,Kafka raw_offers,Offer body text,Preserved from source
+jobs_clean_stream,experience_level,string,Kafka raw_offers,Required experience level,Missing values set to Non renseigne
+jobs_clean_stream,contract_type,string,Kafka raw_offers,Contract type,Upper-cased
+jobs_clean_stream,published_at,date,Kafka raw_offers,Publication date,Parsed by PostgreSQL insert
+jobs_clean_stream,url,string,Kafka raw_offers,Source URL,Used for deterministic identity when present
+jobs_clean_stream,content_length,integer,stream consumer,Description length,Computed as length of description
+jobs_clean_stream,skills,string,stream consumer,Comma-separated skills,Dictionary match from config/skills.yml
+jobs_clean_stream,scraped_at,timestamp,Kafka raw_offers,Source scrape timestamp,Carried from producer payload
+jobs_clean_stream,first_seen_at,timestamp,stream consumer,First load timestamp,Set on insert
+jobs_clean_stream,last_seen_at,timestamp,stream consumer,Last observed timestamp,Updated on conflict
+job_skills_stream,job_id,string,jobs_clean_stream,Offer id,Carried from jobs_clean_stream
+job_skills_stream,skill,string,jobs_clean_stream,Detected skill,Exploded from skills list
+stream_producer_runs,run_id,string,producer,Producer run id,Generated by producer observability
+stream_producer_runs,source,string,producer,Published source,Set by producer source argument
+stream_producer_runs,keyword,string,producer,Search keyword,Set by producer keyword argument
+stream_producer_runs,pages,integer,producer,Pages requested,Set by producer pages argument
+stream_producer_runs,started_at,timestamp,producer,Run start timestamp,Set before publishing starts
+stream_producer_runs,finished_at,timestamp,producer,Run finish timestamp,Set when publishing finishes
+stream_producer_runs,status,string,producer,Run status,running success or failed
+stream_producer_runs,rows_published,integer,producer,Kafka messages published,Incremented from publish count
+stream_producer_runs,error_message,string,producer,Failure details,Set on producer exception
+stream_consumer_batches,batch_id,string,consumer,Consumer batch id,Generated by consumer observability
+stream_consumer_batches,topic,string,consumer,Kafka topic consumed,Set from RAW_OFFERS_TOPIC
+stream_consumer_batches,started_at,timestamp,consumer,Batch start timestamp,Set when flush starts
+stream_consumer_batches,finished_at,timestamp,consumer,Batch finish timestamp,Set when flush completes
+stream_consumer_batches,status,string,consumer,Batch status,success or failed
+stream_consumer_batches,rows_processed,integer,consumer,Clean rows processed,Count of rows flushed
+stream_consumer_batches,skills_processed,integer,consumer,Skill rows processed,Count of exploded skill rows
+stream_consumer_batches,parquet_path,string,consumer,Local micro-batch path,Path returned by write_parquet_batch
+stream_consumer_batches,error_message,string,consumer,Failure details,Set on consumer exception
+stream_dead_letter_jobs,dead_letter_id,string,consumer,Rejected message id,Generated for invalid Kafka records
+stream_dead_letter_jobs,topic,string,consumer,Kafka topic,Set from RAW_OFFERS_TOPIC
+stream_dead_letter_jobs,source,string,consumer,Rejected source,Extracted from raw payload
+stream_dead_letter_jobs,url,string,consumer,Rejected URL,Extracted from raw payload
+stream_dead_letter_jobs,title,string,consumer,Rejected title,Extracted from raw payload
+stream_dead_letter_jobs,reason,string,consumer,Validation failure reason,Comma-separated validation errors
+stream_dead_letter_jobs,raw_payload,json,consumer,Original rejected message,Stored as JSONB
+stream_dead_letter_jobs,created_at,timestamp,consumer,Dead-letter timestamp,Default NOW in PostgreSQL
+data_quality_results,quality_result_id,bigserial,Great Expectations,Quality result id,Generated by PostgreSQL
+data_quality_results,run_at,timestamp,Great Expectations,Validation timestamp,Set by quality/ge_runner.py
+data_quality_results,target,string,Great Expectations,Validated dataset,batch stream or file path
+data_quality_results,check_name,string,Great Expectations,Expectation name,One row per expectation summary
+data_quality_results,severity,string,Great Expectations,error or warning,Defined in expectation suite metadata
+data_quality_results,status,string,Great Expectations,passed or failed,Derived from expectation success
+data_quality_results,failed_count,integer,Great Expectations,Failed row count,Derived from unexpected_count
+data_quality_results,total_count,integer,Great Expectations,Validated row count,Derived from dataframe length
+data_quality_results,details,string,Great Expectations,Human-readable detail,Static rule description
+pipeline_run_metadata,run_id,string,pipeline,Pipeline run id,Generated by run_pipeline.py
+pipeline_run_metadata,pipeline_name,string,pipeline,Pipeline name,Set to batch_medallion
+pipeline_run_metadata,started_at,timestamp,pipeline,Run start timestamp,Set at CLI startup
+pipeline_run_metadata,finished_at,timestamp,pipeline,Run finish timestamp,Set when metadata row is written
+pipeline_run_metadata,status,string,pipeline,Run status,success or failed
+pipeline_run_metadata,bronze_paths,string,pipeline,Bronze files used,Newline-separated local debug paths
+pipeline_run_metadata,silver_path,string,pipeline,Silver file used,Path to offres_clean parquet debug mirror
+pipeline_run_metadata,gold_paths,string,pipeline,Gold files produced,Newline-separated local debug paths
+pipeline_run_metadata,silver_transform_version,string,pipeline,Silver transform version,Constant from src.common.versions
+pipeline_run_metadata,skills_extraction_version,string,pipeline,Skills extraction version,Constant from src.common.versions
+pipeline_run_metadata,error_message,string,pipeline,Failure details,Set when run metadata records failure
