@@ -22,6 +22,18 @@ GOLD_TABLES = (
 )
 
 
+def _insert_dataframe(connection, table_name: str, df: pd.DataFrame) -> None:
+    if df.empty:
+        return
+
+    cleaned = df.astype(object).where(pd.notna(df), None)
+    columns = list(cleaned.columns)
+    column_sql = ", ".join(columns)
+    value_sql = ", ".join(f":{column}" for column in columns)
+    sql = text(f"INSERT INTO {table_name} ({column_sql}) VALUES ({value_sql})")
+    connection.execute(sql, cleaned.to_dict(orient="records"))
+
+
 def get_database_url() -> str:
     return os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
 
@@ -124,13 +136,13 @@ def load_gold_to_postgres(
             else:
                 silver_df = pd.read_csv(silver_file)
             connection.execute(text("TRUNCATE TABLE offres_clean"))
-            silver_df.to_sql("offres_clean", connection, if_exists="append", index=False)
+            _insert_dataframe(connection, "offres_clean", silver_df)
             loaded_tables.append("offres_clean")
 
             for file_name, table_name in GOLD_TABLES:
                 df = pd.read_csv(gold_path / file_name)
                 connection.execute(text(f"TRUNCATE TABLE {table_name}"))
-                df.to_sql(table_name, connection, if_exists="append", index=False)
+                _insert_dataframe(connection, table_name, df)
                 loaded_tables.append(table_name)
     except OperationalError as exc:
         raise RuntimeError(

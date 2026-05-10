@@ -41,8 +41,9 @@ def upload_file(local_path: str | Path, object_name: str) -> str | None:
 
     try:
         ensure_bucket()
-        _client().fput_object(MINIO_BUCKET, object_name.replace("\\", "/"), str(path))
-        uri = f"s3://{MINIO_BUCKET}/{object_name.replace('\\', '/')}"
+        normalized_object_name = object_name.replace("\\", "/")
+        _client().fput_object(MINIO_BUCKET, normalized_object_name, str(path))
+        uri = f"s3://{MINIO_BUCKET}/{normalized_object_name}"
         print(f"MinIO: {uri}")
         return uri
     except Exception as exc:

@@ -1,0 +1,11 @@
+pandas==2.2.3
+beautifulsoup4==4.12.3
+requests==2.32.3
+python-dateutil==2.9.0.post0
+psycopg2-binary==2.9.10
+curl_cffi==0.11.4
+fastavro==1.10.0
+pyarrow==18.1.0
+confluent-kafka[avro]==2.6.1
+minio==7.2.12
+great_expectations==0.18.22

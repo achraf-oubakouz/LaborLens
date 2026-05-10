@@ -1,10 +1,15 @@
 import argparse
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 from sqlalchemy import create_engine, text
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.common.locations import known_city_values
 from src.common.paths import SILVER_DIR
@@ -23,7 +28,9 @@ def _read_dataset(target: str) -> pd.DataFrame:
 
     if target == "stream":
         engine = create_engine(DATABASE_URL)
-        return pd.read_sql("SELECT * FROM jobs_clean_stream", engine)
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT * FROM jobs_clean_stream"))
+            return pd.DataFrame(result.mappings().all())
 
     path = Path(target)
     if path.suffix == ".parquet":

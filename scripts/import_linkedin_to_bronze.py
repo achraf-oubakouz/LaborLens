@@ -1,4 +1,10 @@
 import argparse
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.pipelines.bronze import _write_bronze_rows
 from src.scrapers.linkedin_importer import DEFAULT_LINKEDIN_CSV, import_linkedin_jobs

@@ -81,6 +81,60 @@ services:
     depends_on:
       - postgres
 
+  streaming-consumer:
+    image: apache/airflow:2.10.4-python3.11
+    container_name: laborlens_streaming_consumer
+    depends_on:
+      - postgres
+      - kafka
+      - schema-registry
+      - minio
+    environment:
+      _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements-airflow.txt
+      DATABASE_URL: postgresql+psycopg2://emploi:emploi@postgres:5432/emploi_maroc
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      RAW_OFFERS_TOPIC: raw_job_offers
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: laborlens
+    volumes:
+      - .:/opt/airflow/project
+    working_dir: /opt/airflow/project
+    command: python -m src.streaming.consumer
+    restart: unless-stopped
+
+  streaming-supervisor:
+    image: apache/airflow:2.10.4-python3.11
+    container_name: laborlens_streaming_supervisor
+    depends_on:
+      - postgres
+      - kafka
+      - schema-registry
+      - minio
+    environment:
+      _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements-airflow.txt
+      DATABASE_URL: postgresql+psycopg2://emploi:emploi@postgres:5432/emploi_maroc
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      RAW_OFFERS_TOPIC: raw_job_offers
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: laborlens
+    volumes:
+      - .:/opt/airflow/project
+    working_dir: /opt/airflow/project
+    command: >
+      python -m src.streaming.supervisor
+      --rekrute-pages 1
+      --rekrute-keyword python
+      --rekrute-interval-seconds 60
+      --maroc-annonces-pages 2
+      --maroc-annonces-interval-seconds 120
+    restart: unless-stopped
+
   airflow-init:
     image: apache/airflow:2.10.4-python3.11
     container_name: laborlens_airflow_init
@@ -96,7 +150,7 @@ services:
       _AIRFLOW_WWW_USER_CREATE: "true"
       _AIRFLOW_WWW_USER_USERNAME: admin
       _AIRFLOW_WWW_USER_PASSWORD: admin
-      _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements.txt
+      _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements-airflow.txt
       DATABASE_URL: postgresql+psycopg2://emploi:emploi@postgres:5432/emploi_maroc
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
@@ -113,12 +167,13 @@ services:
     image: apache/airflow:2.10.4-python3.11
     container_name: laborlens_airflow_webserver
     depends_on:
-      - airflow-init
+      airflow-init:
+        condition: service_completed_successfully
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements.txt
+      _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements-airflow.txt
       DATABASE_URL: postgresql+psycopg2://emploi:emploi@postgres:5432/emploi_maroc
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
@@ -137,12 +192,13 @@ services:
     image: apache/airflow:2.10.4-python3.11
     container_name: laborlens_airflow_scheduler
     depends_on:
-      - airflow-init
+      airflow-init:
+        condition: service_completed_successfully
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements.txt
+      _PIP_ADDITIONAL_REQUIREMENTS: -r /opt/airflow/project/requirements-airflow.txt
       DATABASE_URL: postgresql+psycopg2://emploi:emploi@postgres:5432/emploi_maroc
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
